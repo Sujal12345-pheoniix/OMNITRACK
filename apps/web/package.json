@@ -1,0 +1,42 @@
+{
+  "name": "@omnitrack/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OmniTrack staff web application (Next.js)",
+  "scripts": {
+    "dev": "dotenv -e ../../.env -- next dev --port 3100",
+    "build": "next build",
+    "start": "next start --port 3100",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src e2e",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@omnitrack/contracts": "*",
+    "@omnitrack/permissions": "*",
+    "@omnitrack/ui": "*",
+    "@tanstack/react-query": "5.108.0",
+    "date-fns": "4.4.0",
+    "lucide-react": "0.577.0",
+    "next": "15.5.29",
+    "qrcode": "1.5.4",
+    "react": "19.1.10",
+    "react-dom": "19.1.10",
+    "recharts": "2.15.4"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@next/eslint-plugin-next": "15.5.29",
+    "@omnitrack/config": "*",
+    "@playwright/test": "1.65.1",
+    "@types/node": "20.19.43",
+    "@types/qrcode": "1.5.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "autoprefixer": "10.6.2",
+    "dotenv-cli": "8.0.0",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "postcss": "8.5.33",
+    "tailwindcss": "3.4.19"
+  }
+}

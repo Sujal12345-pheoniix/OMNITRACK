@@ -1,0 +1,114 @@
+# Staging-equivalent stack: production images, production settings (NODE_ENV=staging,
+# secure cookies), isolated database. Runs on any Docker host.
+#   node scripts/make-staging-env.mjs      # once: generates infra/staging.env with random secrets
+#   docker compose -f infra/compose.staging.yml --env-file infra/staging.env up -d --build --wait
+# Web: http://localhost:3300   Portal: http://localhost:3400   Mail UI: http://localhost:18026
+name: omnitrack-staging
+
+x-app-env: &app-env
+  NODE_ENV: staging
+  LOG_LEVEL: info
+  DATABASE_URL_APP: postgresql://omnitrack_app:${OMNITRACK_APP_PASSWORD}@postgres:5432/omnitrack
+  DATABASE_URL_WORKER: postgresql://omnitrack_worker:${OMNITRACK_WORKER_PASSWORD}@postgres:5432/omnitrack
+  REDIS_URL: redis://redis:6379
+  API_PORT: '4100'
+  WEB_ORIGIN: http://localhost:3300
+  PORTAL_ORIGIN: http://localhost:3400
+  APP_BASE_URL: http://localhost:3300
+  COOKIE_SECURE: 'true'
+  MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY}
+  SELF_SERVICE_SIGNUP: 'true'
+  MFA_ENFORCE_PRIVILEGED: 'true'
+  HIBP_ENABLED: 'false'
+  SMTP_URL: smtp://mailpit:1025
+  EMAIL_FROM: OmniTrack Staging <no-reply@staging.omnitrack.local>
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      OMNITRACK_MIGRATOR_PASSWORD: ${OMNITRACK_MIGRATOR_PASSWORD}
+      OMNITRACK_APP_PASSWORD: ${OMNITRACK_APP_PASSWORD}
+      OMNITRACK_WORKER_PASSWORD: ${OMNITRACK_WORKER_PASSWORD}
+    volumes:
+      - staging_pgdata:/var/lib/postgresql/data
+      - ./postgres/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d omnitrack']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - '127.0.0.1:18026:8025'
+
+  migrate:
+    build: { context: .., dockerfile: infra/Dockerfile, target: migrate }
+    image: omnitrack/migrate:staging
+    environment:
+      DATABASE_URL: postgresql://omnitrack_migrator:${OMNITRACK_MIGRATOR_PASSWORD}@postgres:5432/omnitrack
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: 'no'
+
+  api:
+    build: { context: .., dockerfile: infra/Dockerfile, target: api }
+    image: omnitrack/api:staging
+    environment: *app-env
+    ports:
+      - '127.0.0.1:4300:4100'
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  worker:
+    build: { context: .., dockerfile: infra/Dockerfile, target: worker }
+    image: omnitrack/worker:staging
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: web
+      args: { API_INTERNAL_URL: 'http://api:4100' }
+    image: omnitrack/web:staging
+    ports:
+      - '127.0.0.1:3300:3100'
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+  portal:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: portal
+      args: { API_INTERNAL_URL: 'http://api:4100' }
+    image: omnitrack/portal:staging
+    ports:
+      - '127.0.0.1:3400:3200'
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  staging_pgdata:

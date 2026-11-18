@@ -1,0 +1,24 @@
+# gitleaks configuration: default rules plus project allowlist.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local-only placeholders and generated/ignored paths"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)\.next/''',
+  '''(^|/)dist/''',
+  '''(^|/)\.git/''',
+  '''(^|/)\.env$''',
+  '''infra/staging\.env$''',
+  '''package-lock\.json$''',
+  '''(^|/)e2e/artifacts/''',
+  '''(^|/)test-results/''',
+]
+# Documented, intentionally public development-only credentials for the local Docker stack.
+regexes = [
+  '''dev_(superuser|migrator|app|worker)_pw''',
+  '''REPLACE_WITH_32_RANDOM_BYTES_BASE64''',
+  # Synthetic password used only by automated tests against disposable databases.
+  '''Correct-Horse-Battery-9917''',
+]

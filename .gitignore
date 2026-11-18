@@ -29,3 +29,10 @@ uploads/
 .idea/
 .DS_Store
 Thumbs.db
+
+# staging secrets and test outputs
+infra/staging.env
+**/e2e/artifacts/
+**/test-results/
+**/playwright-report/
+.turbo/

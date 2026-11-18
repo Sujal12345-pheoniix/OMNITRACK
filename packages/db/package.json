@@ -1,0 +1,29 @@
+{
+  "name": "@omnitrack/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Prisma schema, migrations and tenant-aware database access",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "prisma"],
+  "scripts": {
+    "generate": "prisma generate",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests",
+    "migrate:dev": "dotenv -e ../../.env -- prisma migrate dev",
+    "migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
+    "migrate:status": "dotenv -e ../../.env -- prisma migrate status",
+    "migrate:check": "dotenv -e ../../.env -- node scripts/check-migrations.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "devDependencies": {
+    "@omnitrack/config": "*",
+    "dotenv-cli": "8.0.0",
+    "prisma": "6.19.3",
+    "vitest": "3.2.7"
+  }
+}

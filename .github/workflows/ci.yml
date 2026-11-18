@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20.18.0'
+  TURBO_TELEMETRY_DISABLED: '1'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  quality:
+    name: Lint, types, unit tests, build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - run: npm ci --no-audit --no-fund
+      - run: npx turbo run build
+      - run: npx turbo run lint
+      - run: npx turbo run typecheck
+      - run: npx turbo run test
+
+  integration:
+    name: Integration tests (PostgreSQL + Redis)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: ci_superuser_pw }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 3s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://omnitrack_migrator:ci_migrator_pw@localhost:5432/omnitrack
+      DATABASE_URL_APP: postgresql://omnitrack_app:ci_app_pw@localhost:5432/omnitrack
+      DATABASE_URL_WORKER: postgresql://omnitrack_worker:ci_worker_pw@localhost:5432/omnitrack
+      TEST_SUPERUSER_URL: postgresql://postgres:ci_superuser_pw@localhost:5432/omnitrack
+      REDIS_URL: redis://localhost:6379
+      WEB_ORIGIN: http://localhost:3100
+      PORTAL_ORIGIN: http://localhost:3200
+      APP_BASE_URL: http://localhost:3100
+      MFA_ENCRYPTION_KEY: Y2ktb25seS1rZXktbm90LXNlY3JldC0zMi1ieXRlcyE=
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - name: Create database roles (same script as every environment)
+        run: |
+          docker exec -i \
+            -e OMNITRACK_MIGRATOR_PASSWORD=ci_migrator_pw -e OMNITRACK_APP_PASSWORD=ci_app_pw -e OMNITRACK_WORKER_PASSWORD=ci_worker_pw \
+            "${{ job.services.postgres.id }}" sh -s < infra/postgres/01-roles.sh
+      - run: npm ci --no-audit --no-fund
+      - run: npx turbo run build --filter=@omnitrack/api...
+      - name: Migrations apply cleanly, no drift, append-only history
+        run: |
+          BASE_ARGS=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then BASE_ARGS="--base origin/${{ github.base_ref }}"; fi
+          (cd packages/db && node scripts/check-migrations.mjs $BASE_ARGS)
+      - name: API integration suite (auth, tenancy, RBAC, isolation, audit)
+        run: npx vitest run --project integration
+        working-directory: apps/api
+
+  security:
+    name: Secret scan and dependency audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: gitleaks (full history)
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 \
+            git /repo --config /repo/.gitleaks.toml --redact --no-banner --exit-code 1
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: npm }
+      - name: Production dependency audit (high and critical block)
+        run: npm audit --omit=dev --audit-level=high
+
+  images:
+    name: Build container images
+    runs-on: ubuntu-24.04
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build all runtime targets
+        run: |
+          for target in migrate api worker web portal; do
+            docker buildx build --file infra/Dockerfile --target "$target" --tag "omnitrack/$target:${{ github.sha }}" --load .
+          done
+
+  staging-smoke:
+    name: Staging stack smoke test
+    runs-on: ubuntu-24.04
+    needs: [images, integration]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ env.NODE_VERSION }}' }
+      - run: node scripts/make-staging-env.mjs
+      - run: docker compose -f infra/compose.staging.yml --env-file infra/staging.env up -d --build --wait --wait-timeout 300
+      - run: node scripts/staging-smoke.mjs
+      - if: always()
+        run: docker compose -f infra/compose.staging.yml --env-file infra/staging.env logs --no-color --tail 200

@@ -1,0 +1,108 @@
+/* OmniTrack design tokens (HSL components). Light is default; dark follows the OS unless
+   the document root carries an explicit .light or .dark class. Contrast: text on
+   background ≥ 4.5:1, muted text ≥ 4.5:1, borders/controls ≥ 3:1 (WCAG 2.2 AA). */
+:root {
+  --background: 220 20% 98%;
+  --surface: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --muted: 220 14% 94%;
+  --muted-foreground: 220 9% 38%;
+  --border: 220 13% 86%;
+  --input: 220 10% 62%;
+  --ring: 221 83% 48%;
+  --primary: 221 83% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 94%;
+  --secondary-foreground: 222 47% 15%;
+  --accent: 221 70% 95%;
+  --accent-foreground: 221 83% 30%;
+  --destructive: 0 72% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 152 69% 28%;
+  --success-foreground: 0 0% 100%;
+  --warning: 32 95% 34%;
+  --warning-foreground: 0 0% 100%;
+  --sidebar: 222 40% 12%;
+  --sidebar-foreground: 220 20% 92%;
+  --sidebar-muted: 220 12% 68%;
+  --sidebar-accent: 222 32% 20%;
+  --radius: 0.5rem;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: 224 30% 8%;
+    --surface: 224 26% 11%;
+    --foreground: 220 20% 94%;
+    --muted: 224 20% 16%;
+    --muted-foreground: 220 12% 70%;
+    --border: 224 16% 22%;
+    --input: 224 12% 46%;
+    --ring: 217 91% 65%;
+    --primary: 217 91% 62%;
+    --primary-foreground: 224 40% 8%;
+    --secondary: 224 20% 18%;
+    --secondary-foreground: 220 20% 94%;
+    --accent: 221 40% 20%;
+    --accent-foreground: 217 91% 80%;
+    --destructive: 0 75% 62%;
+    --destructive-foreground: 224 40% 8%;
+    --success: 152 55% 52%;
+    --success-foreground: 224 40% 8%;
+    --warning: 38 92% 58%;
+    --warning-foreground: 224 40% 8%;
+    --sidebar: 224 32% 6%;
+    --sidebar-foreground: 220 20% 92%;
+    --sidebar-muted: 220 12% 66%;
+    --sidebar-accent: 224 24% 14%;
+    color-scheme: dark;
+  }
+}
+
+:root.dark {
+  --background: 224 30% 8%;
+  --surface: 224 26% 11%;
+  --foreground: 220 20% 94%;
+  --muted: 224 20% 16%;
+  --muted-foreground: 220 12% 70%;
+  --border: 224 16% 22%;
+  --input: 224 12% 46%;
+  --ring: 217 91% 65%;
+  --primary: 217 91% 62%;
+  --primary-foreground: 224 40% 8%;
+  --secondary: 224 20% 18%;
+  --secondary-foreground: 220 20% 94%;
+  --accent: 221 40% 20%;
+  --accent-foreground: 217 91% 80%;
+  --destructive: 0 75% 62%;
+  --destructive-foreground: 224 40% 8%;
+  --success: 152 55% 52%;
+  --success-foreground: 224 40% 8%;
+  --warning: 38 92% 58%;
+  --warning-foreground: 224 40% 8%;
+  --sidebar: 224 32% 6%;
+  --sidebar-foreground: 220 20% 92%;
+  --sidebar-muted: 220 12% 66%;
+  --sidebar-accent: 224 24% 14%;
+  color-scheme: dark;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: 'cv11', 'ss01';
+}
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

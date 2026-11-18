@@ -27,7 +27,7 @@
     "infra:down": "docker compose -f infra/compose.yml down",
     "secrets:scan": "node scripts/secret-scan.mjs",
     "ci:local": "node scripts/ci-local.mjs",
-    "postinstall": "npm run generate -w @omnitrack/db"
+    "postinstall": "npm run generate -w @omnitrack/db --if-present"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

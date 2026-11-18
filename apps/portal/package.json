@@ -1,0 +1,31 @@
+{
+  "name": "@omnitrack/portal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OmniTrack candidate portal shell (Next.js). Candidate features arrive with the recruitment release.",
+  "scripts": {
+    "dev": "dotenv -e ../../.env -- next dev --port 3200",
+    "build": "next build",
+    "start": "next start --port 3200",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@omnitrack/ui": "*",
+    "next": "15.5.29",
+    "react": "19.1.10",
+    "react-dom": "19.1.10"
+  },
+  "devDependencies": {
+    "@next/eslint-plugin-next": "15.5.29",
+    "@omnitrack/config": "*",
+    "@types/node": "20.19.43",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "autoprefixer": "10.6.2",
+    "dotenv-cli": "8.0.0",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "postcss": "8.5.33",
+    "tailwindcss": "3.4.19"
+  }
+}
