@@ -1,0 +1,41 @@
+{
+  "name": "omnitrack",
+  "private": true,
+  "description": "OmniTrack — Enterprise Operations and Intelligence Platform",
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=20.18 <21 || >=22.11"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel --filter=@omnitrack/api --filter=@omnitrack/worker --filter=@omnitrack/web --filter=@omnitrack/portal",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "npm run test:integration -w @omnitrack/api",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "npm run generate -w @omnitrack/db",
+    "db:migrate": "npm run migrate:deploy -w @omnitrack/db",
+    "db:migrate:dev": "npm run migrate:dev -w @omnitrack/db",
+    "db:check": "npm run migrate:check -w @omnitrack/db",
+    "infra:up": "docker compose -f infra/compose.yml up -d --wait",
+    "infra:down": "docker compose -f infra/compose.yml down",
+    "secrets:scan": "node scripts/secret-scan.mjs",
+    "ci:local": "node scripts/ci-local.mjs",
+    "postinstall": "npm run generate -w @omnitrack/db"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "globals": "16.5.0",
+    "prettier": "3.10.1",
+    "turbo": "2.11.12",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.73.0"
+  }
+}

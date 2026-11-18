@@ -1,0 +1,38 @@
+# Local development infrastructure. Host ports avoid clashing with other local projects.
+name: omnitrack-dev
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev_superuser_pw
+      OMNITRACK_MIGRATOR_PASSWORD: dev_migrator_pw
+      OMNITRACK_APP_PASSWORD: dev_app_pw
+      OMNITRACK_WORKER_PASSWORD: dev_worker_pw
+    ports:
+      - '127.0.0.1:15432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d omnitrack']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:16379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - '127.0.0.1:11025:1025'
+      - '127.0.0.1:18025:8025'
+volumes:
+  pgdata:
