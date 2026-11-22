@@ -5,6 +5,8 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['@omnitrack/ui'],
+  // Inline the API address for server components: the runtime image does not keep build-stage ENV.
+  env: { API_INTERNAL_URL: apiTarget },
   // The browser talks only to this origin; /api is proxied to the API so session
   // cookies stay first-party and no CORS is needed.
   async rewrites() {
